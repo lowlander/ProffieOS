@@ -13,30 +13,46 @@
 
 class Button : public ButtonBase {
 public:
-  Button(enum BUTTON button, int pin, const char* name, bool pullup = true) : ButtonBase(name, button), pin_(pin) {
-	pullup_ = pullup;  
-    if (pullup){
-		pinMode(pin, INPUT_PULLUP);
+
+  Button(enum BUTTON button, int pin, const char* name) : ButtonBase(name, button), pin_(pin) {
+    pinMode(pin, INPUT_PULLUP);
 #ifdef ENABLE_SNOOZE
-		snooze_digital.pinMode(pin, INPUT_PULLUP, RISING);
+    snooze_digital.pinMode(pin, INPUT_PULLUP, RISING);
 #endif
-    }else{
-		pinMode(pin, INPUT_PULLDOWN);
-#ifdef ENABLE_SNOOZE
-		snooze_digital.pinMode(pin, INPUT_PULLDOWN, FALLING);
-#endif
-	}
   }
 
 protected:
   uint8_t pin_;
 
   bool Read() override {
-	if (pullup_){  
-		return digitalRead(pin_) == LOW;
-	}else{
-		return digitalRead(pin_) == HIGH;
-	}
+    return digitalRead(pin_) == LOW;
+  }
+};
+
+
+// For special setups were you want to hook up a momentary button to VCC(3.3V) or Vbat
+// and the other end to the inputs of the Proffieboard / Teensy 
+// 
+// For Proffieboards V2 all inputs can handle Vbat, except for Data4 / blade4pin
+//
+// Usage example, put this in the button config section: 
+// PullDownButton PowerButton(BUTTON_POWER, powerButtonPin, "pow");  
+//
+
+class PullDownButton : public ButtonBase{
+public:
+  PullDownButton(enum BUTTON button, int pin, const char* name) : ButtonBase(name, button), pin_(pin) {
+    pinMode(pin, INPUT_PULLDOWN);
+#ifdef ENABLE_SNOOZE
+    snooze_digital.pinMode(pin, INPUT_PULLDOWN, FALLING);
+#endif
+  }
+
+protected:
+  uint8_t pin_;
+
+  bool Read() override {
+	return digitalRead(pin_) == HIGH;
   }
 };
 
@@ -64,8 +80,6 @@ protected:
   bool Read() override {
 	return digitalRead(pin_) == HIGH;
   }
-  
-  bool pullup_;
 };
 
 #endif
